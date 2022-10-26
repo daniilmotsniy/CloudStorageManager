@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:6-alpine
+
+  mongo:
+    image: mongo:latest
+
+  web:
+    build: .
+    ports:
+      - "8080:8000"
+    command: uvicorn main:app --host 0.0.0.0 --reload
+    env_file:
+      - .env
+    volumes:
+      - .:/usr/src/app
+    depends_on:
+      - redis
+
+  worker:
+    build: .
+    command: celery -A worker.celery worker --loglevel=info
+    env_file:
+      - .env
+    volumes:
+      - ./:/usr/src/app
+    depends_on:
+      - redis
+      - web
