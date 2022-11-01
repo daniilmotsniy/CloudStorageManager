@@ -44,32 +44,44 @@ def get_status(task_id):
 
 @app.post('/upload_file/', status_code=201)
 async def upload_file(file: UploadFile, bucket_id: str, folder: str = None):
-    db_bucket = await db['buckets'].find_one({'_id': ObjectId(bucket_id)},
-                                             {'provider': 1, 'name': 1, 'folders': 1})
-    if not bucket_id:
+    buckets = [bck async for bck in db.buckets.aggregate([
+        {
+            '$match': {'_id': ObjectId(bucket_id)}
+        },
+        {
+            '$project': {'folders': 1, 'name': 1, 'provider': 1}
+        },
+        {
+            '$unwind': '$folders'
+        },
+        {
+            '$match': {'folders.name': folder}
+        },
+    ])]
+    if not buckets:
         return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             content={'error': 'You have no such bucket!'})
-    # TODO validate folder
-    Path('tmp').mkdir(parents=True, exist_ok=True)
-    tmp_file_path = f'tmp/{uuid4()}-{file.filename}'
-    async with aiofiles.open(tmp_file_path, 'wb') as out_file:
-        content = await file.read()
-        content_result = await out_file.write(content)
-        await db.buckets.update_one(
-            {'_id': ObjectId(bucket_id)},
-            {
-                '$push': {
-                    'files': {'name': file.filename, 'folder': folder}
+
+    for db_bucket in buckets:
+        Path('tmp').mkdir(parents=True, exist_ok=True)
+        tmp_file_path = f'tmp/{uuid4()}-{file.filename}'
+        async with aiofiles.open(tmp_file_path, 'wb') as out_file:
+            content = await file.read()
+            content_result = await out_file.write(content)
+            await db.buckets.update_one(
+                {'_id': ObjectId(bucket_id)},
+                {
+                    '$push': {
+                        'files': {'name': file.filename, 'folder': folder}
+                    }
                 }
-            }
-        )
-        if content_result:
-            # TODO add mapper
-            if db_bucket['provider'] == 'aws':
-                task = upload_to_s3.delay(tmp_file_path, db_bucket['name'], file.filename)
-            else:
-                return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                                    content={'error': 'Unknown provider in bucket!'})
+            )
+            if content_result:
+                if db_bucket['provider'] == 'aws':
+                    task = upload_to_s3.delay(tmp_file_path, db_bucket['name'], file.filename)
+                else:
+                    return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                                        content={'error': 'Unknown provider in bucket!'})
     return {'task_id': task.id}
 
 
@@ -93,11 +105,8 @@ async def create_bucket(provider: str, name: str):
     if not provider_db:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST,
                             content={'error': 'There is no such provider'})
-    # TODO add mapper
     if provider_db['name'].lower() == 'aws':
         try:
-            # FIXME the unspecified location constraint is incompatible
-            #  for the region specific endpoint this request was sent to
             s3.create_bucket(Bucket=name)
         except Exception as e:
             return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
