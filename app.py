@@ -55,8 +55,7 @@ async def upload_file(file: UploadFile, bucket_id: str, folder: str = None):
     async with aiofiles.open(tmp_file_path, 'wb') as out_file:
         content = await file.read()
         content_result = await out_file.write(content)
-        # TODO add file URL
-        await db['buckets'].update_one(
+        await db.buckets.update_one(
             {'_id': ObjectId(bucket_id)},
             {
                 '$push': {
@@ -76,7 +75,7 @@ async def upload_file(file: UploadFile, bucket_id: str, folder: str = None):
 
 @app.post('/folders', response_description='Add new folder')
 async def create_folder(name: str, bucket: str, parent: str = None):
-    created_folder = await db['buckets'].update_one(
+    created_folder = await db.buckets.update_one(
         {'_id': ObjectId(bucket)},
         {
             '$push': {
@@ -109,7 +108,7 @@ async def create_bucket(provider: str, name: str):
     else:
         return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             content={'error': 'There is wrong provider in database'})
-    new_bucket = await db['buckets'].insert_one({
+    new_bucket = await db.buckets.insert_one({
         'provider': provider,
         'name': name,
         'folders': [],
@@ -120,8 +119,15 @@ async def create_bucket(provider: str, name: str):
 
 @app.get('/bucket', response_description='Get bucket')
 async def get_bucket(bucket_id: str):
-    bucket = await db['buckets'].find_one({'_id': ObjectId(bucket_id)}, {'_id': 0})
-    return JSONResponse(status_code=status.HTTP_201_CREATED, content=bucket)
+    bucket = await db.buckets.find_one({'_id': ObjectId(bucket_id)}, {'_id': 0})
+    return JSONResponse(status_code=status.HTTP_200_OK, content=bucket)
+
+
+@app.get('/buckets', response_description='Get buckets')
+async def get_buckets():
+    bucket_ids = [{'id': str(bucket['_id']), 'name': bucket['name']}
+                  async for bucket in db.buckets.find({}, {'_id': 1, 'name': 1})]
+    return JSONResponse(status_code=status.HTTP_200_OK, content=bucket_ids)
 
 
 @app.get('/')
