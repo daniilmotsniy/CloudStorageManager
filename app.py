@@ -121,21 +121,17 @@ async def create_bucket(provider: str, name: str):
     if not provider_db:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST,
                             content={'error': 'There is no such provider'})
-    if provider_db['name'].lower() == 'aws':
-        try:
+    try:
+        if provider_db['name'].lower() == 'aws':
             s3.create_bucket(Bucket=name)
-        except Exception as e:
-            return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                                content={'error': str(e)})
-    elif provider_db['name'].lower() == 'gcp':
-        try:
+        elif provider_db['name'].lower() == 'gcp':
             gcp_storage_client.create_bucket(name)
-        except Exception as e:
+        else:
             return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                                content={'error': str(e)})
-    else:
+                                content={'error': 'There is wrong provider in database'})
+    except Exception as e:
         return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            content={'error': 'There is wrong provider in database'})
+                            content={'error': str(e)})
     new_bucket = await db.buckets.insert_one({
         'provider': provider,
         'name': name,
