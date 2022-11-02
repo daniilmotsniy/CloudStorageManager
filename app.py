@@ -46,20 +46,26 @@ def get_status(task_id):
 
 @app.post('/upload_file/', status_code=201)
 async def upload_file(file: UploadFile, bucket_ids: typing.List[str], folder: str = None):
-    buckets = [bucket async for bucket in db.buckets.aggregate([
-        {
-            '$match': {'_id': {'$in': [ObjectId(bucket_id) for bucket_id in bucket_ids]}}
-        },
-        {
-            '$project': {'folders': 1, 'name': 1, 'provider': 1}
-        },
-        {
-            '$unwind': '$folders'
-        },
-        {
-            '$match': {'folders.name': folder}
-        },
-    ])]
+    bucket_q = {'_id': {'$in': [ObjectId(bucket_id) for bucket_id in bucket_ids]}}
+    bucket_only = {'folders': 1, 'name': 1, 'provider': 1}
+    if folder:
+        buckets = [bucket async for bucket in db.buckets.aggregate([
+            {
+                '$match': bucket_q
+            },
+            {
+                '$project': bucket_only
+            },
+            {
+                '$unwind': '$folders'
+            },
+            {
+                '$match': {'folders.name': folder}
+            },
+        ])]
+    else:
+        buckets = [bucket async for bucket in db.buckets.find(bucket_q, bucket_only)]
+
     if not buckets:
         return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             content={'error': 'You have no such bucket or folder!'})
