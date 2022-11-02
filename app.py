@@ -14,8 +14,9 @@ from celery.result import AsyncResult
 from fastapi import FastAPI, UploadFile
 from starlette import status
 from starlette.responses import JSONResponse
+from google.cloud import storage
 
-from worker import upload_to_s3, remove_tmp_file
+from worker import upload_to_s3, upload_to_cloud_storage, remove_tmp_file
 
 app = FastAPI()
 
@@ -26,6 +27,7 @@ aws_session = boto3.Session(region_name=os.environ.get('AWS_REGION', 'us-east-1'
                             aws_access_key_id=os.environ['AWS_ACCESS_KEY'],
                             aws_secret_access_key=os.environ['AWS_SECRET_KEY'])
 s3 = aws_session.client('s3')
+gcp_storage_client = storage.client.Client()
 
 
 @app.get('/tasks/{task_id}')
@@ -90,7 +92,7 @@ async def upload_file(file: UploadFile, bucket_ids: typing.List[str], folder: st
             if db_bucket['provider'] == 'aws':
                 tasks.append(upload_to_s3.si(tmp_file_path, db_bucket['name'], file.filename))
             elif db_bucket['provider'] == 'gcp':
-                pass
+                tasks.append(upload_to_cloud_storage.si(tmp_file_path, db_bucket['name'], file.filename))
             else:
                 return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                                     content={'error': 'Unknown provider in bucket!'})
@@ -125,9 +127,12 @@ async def create_bucket(provider: str, name: str):
         except Exception as e:
             return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                                 content={'error': str(e)})
-    elif provider.lower() == 'gcp':
-        # TODO: create bucket GCP
-        pass
+    elif provider_db['name'].lower() == 'gcp':
+        try:
+            gcp_storage_client.create_bucket(name)
+        except Exception as e:
+            return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                                content={'error': str(e)})
     else:
         return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             content={'error': 'There is wrong provider in database'})
