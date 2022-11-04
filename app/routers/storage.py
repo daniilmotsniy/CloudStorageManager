@@ -40,6 +40,9 @@ gcp_storage_client = storage.client.Client()
 
 @storage_router.post('/upload_file/', status_code=201)
 async def upload_file(file: UploadFile, bucket_ids: typing.List[str], folder: str = None):
+    """
+    file uploading for multiple buckets
+    """
     bucket_q = {'_id': {'$in': [ObjectId(bucket_id) for bucket_id in bucket_ids]}}
     bucket_only = {'folders': 1, 'name': 1, 'provider': 1}
     if folder:
@@ -96,6 +99,9 @@ async def upload_file(file: UploadFile, bucket_ids: typing.List[str], folder: st
 
 @storage_router.post('/folders', response_description='Add new folder')
 async def create_folder(name: str, bucket: str, parent: str = None):
+    """
+    folder creation
+    """
     created_folder = await db.buckets.update_one(
         {'_id': ObjectId(bucket)},
         {
@@ -110,6 +116,9 @@ async def create_folder(name: str, bucket: str, parent: str = None):
 
 @storage_router.post('/buckets', response_description='Add new bucket')
 async def create_bucket(provider: str, name: str):
+    """
+    bucket creation for selected provider
+    """
     provider_db = await db['providers'].find_one({'name': provider})
     if not provider_db:
         return responses.JSONResponse(status_code=status.HTTP_400_BAD_REQUEST,
