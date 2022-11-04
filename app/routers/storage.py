@@ -1,3 +1,7 @@
+"""
+this module contains storage API routes
+"""
+
 import typing
 from os import environ
 from uuid import uuid4
@@ -81,7 +85,8 @@ async def upload_file(file: UploadFile, bucket_ids: typing.List[str], folder: st
             if db_bucket['provider'] == 'aws':
                 tasks.append(upload_to_s3.si(tmp_file_path, db_bucket['name'], file.filename))
             elif db_bucket['provider'] == 'gcp':
-                tasks.append(upload_to_cloud_storage.si(tmp_file_path, db_bucket['name'], file.filename))
+                tasks.append(upload_to_cloud_storage.si(tmp_file_path,
+                                                        db_bucket['name'], file.filename))
             else:
                 return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                                     content={'error': 'Unknown provider in bucket!'})
@@ -127,7 +132,8 @@ async def create_bucket(provider: str, name: str):
         'folders': [],
         'files': [],
     })
-    return JSONResponse(status_code=status.HTTP_201_CREATED, content={'_id': str(new_bucket.inserted_id)})
+    return JSONResponse(status_code=status.HTTP_201_CREATED,
+                        content={'_id': str(new_bucket.inserted_id)})
 
 
 @storage_router.get('/bucket', response_description='Get bucket')
