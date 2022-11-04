@@ -146,12 +146,18 @@ async def create_bucket(provider: str, name: str):
 
 @storage_router.get('/bucket', response_description='Get bucket')
 async def get_bucket(bucket_id: str):
+    """
+    list of buckets
+    """
     bucket = await db.buckets.find_one({'_id': ObjectId(bucket_id)}, {'_id': 0})
     return responses.JSONResponse(status_code=status.HTTP_200_OK, content=bucket)
 
 
 @storage_router.get('/buckets', response_description='Get buckets')
 async def get_buckets():
+    """
+    get one bucket info
+    """
     bucket_ids = [{'id': str(bucket['_id']), 'name': bucket['name']}
                   async for bucket in db.buckets.find({}, {'_id': 1, 'name': 1})]
     return responses.JSONResponse(status_code=status.HTTP_200_OK, content=bucket_ids)
