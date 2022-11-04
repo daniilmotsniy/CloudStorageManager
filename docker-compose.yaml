@@ -11,7 +11,7 @@ services:
     build: .
     ports:
       - "8080:8000"
-    command: uvicorn app:app --host 0.0.0.0 --reload
+    command: uvicorn app.server:app --host 0.0.0.0 --reload
     env_file:
       - .env
     volumes:
@@ -21,7 +21,7 @@ services:
 
   worker:
     build: .
-    command: celery -A worker.celery worker --loglevel=info
+    command: celery -A app.worker.celery worker --loglevel=info
     env_file:
       - .env
     volumes:

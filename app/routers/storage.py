@@ -1,52 +1,41 @@
-import os
 import typing
-from uuid import uuid4
 from os import environ
+from uuid import uuid4
 from pathlib import Path
 
-import aiofiles
 import boto3
-import motor.motor_asyncio
-import uvicorn
-from bson import ObjectId
+import aiofiles
 from celery import chord
-from celery.result import AsyncResult
-from fastapi import FastAPI, UploadFile
+from bson import ObjectId
+import motor.motor_asyncio
 from starlette import status
-from starlette.responses import JSONResponse
 from google.cloud import storage
+from fastapi import UploadFile, APIRouter
+from starlette.responses import JSONResponse
 
-from worker import upload_to_s3, upload_to_cloud_storage, remove_tmp_file
+from app.worker import upload_to_s3, upload_to_cloud_storage, remove_tmp_file
 
-app = FastAPI()
+
+storage_router = APIRouter(
+    prefix="/storage",
+    tags=["storage"],
+    # dependencies=[Depends(get_token_header)],
+    # responses={404: {"description": "Not found"}},
+)
+
 
 mongo_client = motor.motor_asyncio.AsyncIOMotorClient(environ['MONGODB_URL'])
 db = mongo_client.storage
 
-aws_session = boto3.Session(region_name=os.environ.get('AWS_REGION', 'us-east-1'),
-                            aws_access_key_id=os.environ['AWS_ACCESS_KEY'],
-                            aws_secret_access_key=os.environ['AWS_SECRET_KEY'])
+aws_session = boto3.Session(region_name=environ.get('AWS_REGION', 'us-east-1'),
+                            aws_access_key_id=environ['AWS_ACCESS_KEY'],
+                            aws_secret_access_key=environ['AWS_SECRET_KEY'])
 s3 = aws_session.client('s3')
+
 gcp_storage_client = storage.client.Client()
 
 
-@app.get('/tasks/{task_id}')
-def get_status(task_id):
-    """
-    Allows to check status of celery task
-    :param task_id: celery task id
-    :return: processing status and result
-    """
-    task_result = AsyncResult(task_id)
-    result = {
-        'task_id': task_id,
-        'task_status': task_result.status,
-        'task_result': task_result.result
-    }
-    return JSONResponse(result)
-
-
-@app.post('/upload_file/', status_code=201)
+@storage_router.post('/upload_file/', status_code=201)
 async def upload_file(file: UploadFile, bucket_ids: typing.List[str], folder: str = None):
     bucket_q = {'_id': {'$in': [ObjectId(bucket_id) for bucket_id in bucket_ids]}}
     bucket_only = {'folders': 1, 'name': 1, 'provider': 1}
@@ -72,7 +61,7 @@ async def upload_file(file: UploadFile, bucket_ids: typing.List[str], folder: st
         return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             content={'error': 'You have no such bucket or folder!'})
 
-    Path('tmp').mkdir(parents=True, exist_ok=True)
+    Path('../tmp').mkdir(parents=True, exist_ok=True)
     tmp_file_path = f'tmp/{uuid4()}-{file.filename}'
     async with aiofiles.open(tmp_file_path, 'wb') as out_file:
         content = await file.read()
@@ -101,7 +90,7 @@ async def upload_file(file: UploadFile, bucket_ids: typing.List[str], folder: st
     return {'task_id': upload_workflow.id}
 
 
-@app.post('/folders', response_description='Add new folder')
+@storage_router.post('/folders', response_description='Add new folder')
 async def create_folder(name: str, bucket: str, parent: str = None):
     created_folder = await db.buckets.update_one(
         {'_id': ObjectId(bucket)},
@@ -115,7 +104,7 @@ async def create_folder(name: str, bucket: str, parent: str = None):
                         content={'acknowledged': created_folder.acknowledged})
 
 
-@app.post('/buckets', response_description='Add new bucket')
+@storage_router.post('/buckets', response_description='Add new bucket')
 async def create_bucket(provider: str, name: str):
     provider_db = await db['providers'].find_one({'name': provider})
     if not provider_db:
@@ -141,23 +130,14 @@ async def create_bucket(provider: str, name: str):
     return JSONResponse(status_code=status.HTTP_201_CREATED, content={'_id': str(new_bucket.inserted_id)})
 
 
-@app.get('/bucket', response_description='Get bucket')
+@storage_router.get('/bucket', response_description='Get bucket')
 async def get_bucket(bucket_id: str):
     bucket = await db.buckets.find_one({'_id': ObjectId(bucket_id)}, {'_id': 0})
     return JSONResponse(status_code=status.HTTP_200_OK, content=bucket)
 
 
-@app.get('/buckets', response_description='Get buckets')
+@storage_router.get('/buckets', response_description='Get buckets')
 async def get_buckets():
     bucket_ids = [{'id': str(bucket['_id']), 'name': bucket['name']}
                   async for bucket in db.buckets.find({}, {'_id': 1, 'name': 1})]
     return JSONResponse(status_code=status.HTTP_200_OK, content=bucket_ids)
-
-
-@app.get('/')
-async def root():
-    return {'message': 'Welcome to CloudStorageManager!'}
-
-
-if __name__ == '__main__':
-    uvicorn.run('main:app', host='localhost', port=8080, reload=True)

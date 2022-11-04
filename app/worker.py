@@ -28,7 +28,7 @@ def upload_to_s3(file_path, bucket, path):
     return True
 
 
-@celery.task(name="upload_to_s3")
+@celery.task(name="upload_to_cloud_storage")
 def upload_to_cloud_storage(file_path, bucket, path):
     try:
         bucket = gcp_storage_client.bucket(bucket)
