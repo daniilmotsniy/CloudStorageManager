@@ -1,3 +1,7 @@
+"""
+this module contains Celery tasks check API
+"""
+
 from celery.result import AsyncResult
 from starlette.responses import JSONResponse
 from fastapi import APIRouter

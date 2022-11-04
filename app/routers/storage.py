@@ -12,10 +12,9 @@ import aiofiles
 from celery import chord
 from bson import ObjectId
 import motor.motor_asyncio
-from starlette import status
+from starlette import status, responses
 from google.cloud import storage
 from fastapi import UploadFile, APIRouter
-from starlette.responses import JSONResponse
 
 from app.worker import upload_to_s3, upload_to_cloud_storage, remove_tmp_file
 
@@ -62,7 +61,7 @@ async def upload_file(file: UploadFile, bucket_ids: typing.List[str], folder: st
         buckets = [bucket async for bucket in db.buckets.find(bucket_q, bucket_only)]
 
     if not buckets:
-        return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        return responses.JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             content={'error': 'You have no such bucket or folder!'})
 
     Path('../tmp').mkdir(parents=True, exist_ok=True)
@@ -71,7 +70,7 @@ async def upload_file(file: UploadFile, bucket_ids: typing.List[str], folder: st
         content = await file.read()
         content_result = await out_file.write(content)
 
-    tasks = list()
+    tasks = []
     for db_bucket in buckets:
         await db.buckets.update_one(
             {'_id': ObjectId(db_bucket['_id'])},
@@ -88,7 +87,7 @@ async def upload_file(file: UploadFile, bucket_ids: typing.List[str], folder: st
                 tasks.append(upload_to_cloud_storage.si(tmp_file_path,
                                                         db_bucket['name'], file.filename))
             else:
-                return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                return responses.JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                                     content={'error': 'Unknown provider in bucket!'})
 
     upload_workflow = chord(*tasks, remove_tmp_file.si(tmp_file_path)).apply_async()
@@ -105,7 +104,7 @@ async def create_folder(name: str, bucket: str, parent: str = None):
             }
         }
     )
-    return JSONResponse(status_code=status.HTTP_201_CREATED,
+    return responses.JSONResponse(status_code=status.HTTP_201_CREATED,
                         content={'acknowledged': created_folder.acknowledged})
 
 
@@ -113,7 +112,7 @@ async def create_folder(name: str, bucket: str, parent: str = None):
 async def create_bucket(provider: str, name: str):
     provider_db = await db['providers'].find_one({'name': provider})
     if not provider_db:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST,
+        return responses.JSONResponse(status_code=status.HTTP_400_BAD_REQUEST,
                             content={'error': 'There is no such provider'})
     try:
         if provider_db['name'].lower() == 'aws':
@@ -121,29 +120,29 @@ async def create_bucket(provider: str, name: str):
         elif provider_db['name'].lower() == 'gcp':
             gcp_storage_client.create_bucket(name)
         else:
-            return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            return responses.JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                                 content={'error': 'There is wrong provider in database'})
-    except Exception as e:
-        return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            content={'error': str(e)})
+    except ValueError as error:
+        return responses.JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            content={'error': str(error)})
     new_bucket = await db.buckets.insert_one({
         'provider': provider,
         'name': name,
         'folders': [],
         'files': [],
     })
-    return JSONResponse(status_code=status.HTTP_201_CREATED,
+    return responses.JSONResponse(status_code=status.HTTP_201_CREATED,
                         content={'_id': str(new_bucket.inserted_id)})
 
 
 @storage_router.get('/bucket', response_description='Get bucket')
 async def get_bucket(bucket_id: str):
     bucket = await db.buckets.find_one({'_id': ObjectId(bucket_id)}, {'_id': 0})
-    return JSONResponse(status_code=status.HTTP_200_OK, content=bucket)
+    return responses.JSONResponse(status_code=status.HTTP_200_OK, content=bucket)
 
 
 @storage_router.get('/buckets', response_description='Get buckets')
 async def get_buckets():
     bucket_ids = [{'id': str(bucket['_id']), 'name': bucket['name']}
                   async for bucket in db.buckets.find({}, {'_id': 1, 'name': 1})]
-    return JSONResponse(status_code=status.HTTP_200_OK, content=bucket_ids)
+    return responses.JSONResponse(status_code=status.HTTP_200_OK, content=bucket_ids)
