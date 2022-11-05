@@ -14,18 +14,16 @@ from bson import ObjectId
 import motor.motor_asyncio
 from starlette import status, responses
 from google.cloud import storage
-from fastapi import UploadFile, APIRouter
+from fastapi import UploadFile, APIRouter, Depends
 
+from app.core.auth import get_current_active_user
 from app.worker import upload_to_s3, upload_to_cloud_storage, remove_tmp_file
-
 
 storage_router = APIRouter(
     prefix="/storage",
     tags=["storage"],
-    # dependencies=[Depends(get_token_header)],
-    # responses={404: {"description": "Not found"}},
+    dependencies=[Depends(get_current_active_user)],
 )
-
 
 mongo_client = motor.motor_asyncio.AsyncIOMotorClient(environ['MONGODB_URL'])
 db = mongo_client.storage
@@ -65,7 +63,7 @@ async def upload_file(file: UploadFile, bucket_ids: typing.List[str], folder: st
 
     if not buckets:
         return responses.JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            content={'error': 'You have no such bucket or folder!'})
+                                      content={'error': 'You have no such bucket or folder!'})
 
     Path('../tmp').mkdir(parents=True, exist_ok=True)
     tmp_file_path = f'tmp/{uuid4()}-{file.filename}'
@@ -91,7 +89,7 @@ async def upload_file(file: UploadFile, bucket_ids: typing.List[str], folder: st
                                                         db_bucket['name'], file.filename))
             else:
                 return responses.JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                                    content={'error': 'Unknown provider in bucket!'})
+                                              content={'error': 'Unknown provider in bucket!'})
 
     upload_workflow = chord(*tasks, remove_tmp_file.si(tmp_file_path)).apply_async()
     return {'task_id': upload_workflow.id}
@@ -111,7 +109,7 @@ async def create_folder(name: str, bucket: str, parent: str = None):
         }
     )
     return responses.JSONResponse(status_code=status.HTTP_201_CREATED,
-                        content={'acknowledged': created_folder.acknowledged})
+                                  content={'acknowledged': created_folder.acknowledged})
 
 
 @storage_router.post('/buckets', response_description='Add new bucket')
@@ -122,7 +120,7 @@ async def create_bucket(provider: str, name: str):
     provider_db = await db['providers'].find_one({'name': provider})
     if not provider_db:
         return responses.JSONResponse(status_code=status.HTTP_400_BAD_REQUEST,
-                            content={'error': 'There is no such provider'})
+                                      content={'error': 'There is no such provider'})
     try:
         if provider_db['name'].lower() == 'aws':
             s3.create_bucket(Bucket=name)
@@ -130,10 +128,10 @@ async def create_bucket(provider: str, name: str):
             gcp_storage_client.create_bucket(name)
         else:
             return responses.JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                                content={'error': 'There is wrong provider in database'})
+                                          content={'error': 'There is wrong provider in database'})
     except ValueError as error:
         return responses.JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            content={'error': str(error)})
+                                      content={'error': str(error)})
     new_bucket = await db.buckets.insert_one({
         'provider': provider,
         'name': name,
@@ -141,7 +139,7 @@ async def create_bucket(provider: str, name: str):
         'files': [],
     })
     return responses.JSONResponse(status_code=status.HTTP_201_CREATED,
-                        content={'_id': str(new_bucket.inserted_id)})
+                                  content={'_id': str(new_bucket.inserted_id)})
 
 
 @storage_router.get('/bucket', response_description='Get bucket')
