@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException, status, APIRouter
 from app.models.token import Token
 from app.core.config import ACCESS_TOKEN_EXPIRE_MINUTES
 from app.core.auth import User, get_current_active_user, create_access_token, authenticate_user
-from app.models.user import Register
+from app.models.user import RegisterUserInput, RegisterOutput
 
 users_router = APIRouter(
     prefix="/users",
@@ -14,10 +14,15 @@ users_router = APIRouter(
 )
 
 
-@users_router.post("/register", response_model=Register)
-async def register():
-    ...
-    return {}
+@users_router.post("/register", response_model=RegisterOutput)
+async def register(register_data: RegisterUserInput):
+
+    user = register_data.username
+    pwd = register_data.password2
+    # TODO add to db and create token
+    api_token = '123'
+
+    return RegisterOutput(username=user, password=pwd, api_token=api_token)
 
 
 @users_router.post("/token", response_model=Token)

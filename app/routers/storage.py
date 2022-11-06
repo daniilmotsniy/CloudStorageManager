@@ -41,6 +41,7 @@ async def upload_file(file: UploadFile, bucket_ids: typing.List[str], folder: st
     """
     file uploading for multiple buckets
     """
+    bucket_ids = bucket_ids[0].split(',')
     bucket_q = {'_id': {'$in': [ObjectId(bucket_id) for bucket_id in bucket_ids]}}
     bucket_only = {'folders': 1, 'name': 1, 'provider': 1}
     if folder:
