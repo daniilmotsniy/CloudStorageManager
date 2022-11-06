@@ -14,6 +14,7 @@ class UserInDB(User):
 
 class RegisterUserInput(BaseModel):
     username: str
+    email: str
     password1: str
     password2: str
 
@@ -31,5 +32,4 @@ class RegisterUserInput(BaseModel):
 
 class RegisterOutput(BaseModel):
     username: str
-    password: str
     api_token: str

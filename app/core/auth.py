@@ -38,6 +38,16 @@ async def authenticate_user(username: str, password: str):
     return user
 
 
+async def create_user_in_mongo(username: str, email: str, password: str, api_token: str):
+    await db.users.insert_one({
+        'username': username,
+        'email': email,
+        'hashed_password': get_password_hash(password),
+        'api_token': api_token,
+        'disabled': False,
+    })
+
+
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
     if expires_delta:
