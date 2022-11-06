@@ -17,10 +17,11 @@ from google.cloud import storage
 from fastapi import UploadFile, APIRouter, Depends
 
 from app.core.auth import get_current_active_user
+from app.models.user import User
 from app.worker import upload_to_s3, upload_to_cloud_storage, remove_tmp_file
 
 storage_router = APIRouter(
-    prefix="/storage",
+    prefix="/api/storage",
     tags=["storage"],
     dependencies=[Depends(get_current_active_user)],
 )
@@ -37,12 +38,15 @@ gcp_storage_client = storage.client.Client()
 
 
 @storage_router.post('/upload_file/', status_code=201)
-async def upload_file(file: UploadFile, bucket_ids: typing.List[str], folder: str = None):
+async def upload_file(file: UploadFile, bucket_ids: typing.List[str],
+                      current_user: User = Depends(get_current_active_user), folder: str = None):
     """
     file uploading for multiple buckets
     """
+
     bucket_ids = bucket_ids[0].split(',')
-    bucket_q = {'_id': {'$in': [ObjectId(bucket_id) for bucket_id in bucket_ids]}}
+    bucket_q = {'_id': {'$in': [ObjectId(bucket_id) for bucket_id in bucket_ids]},
+                'api_token': current_user.api_token}
     bucket_only = {'folders': 1, 'name': 1, 'provider': 1}
     if folder:
         buckets = [bucket async for bucket in db.buckets.aggregate([
@@ -114,7 +118,7 @@ async def create_folder(name: str, bucket: str, parent: str = None):
 
 
 @storage_router.post('/buckets', response_description='Add new bucket')
-async def create_bucket(provider: str, name: str):
+async def create_bucket(provider: str, name: str, current_user: User = Depends(get_current_active_user)):
     """
     bucket creation for selected provider
     """
@@ -136,6 +140,7 @@ async def create_bucket(provider: str, name: str):
     new_bucket = await db.buckets.insert_one({
         'provider': provider,
         'name': name,
+        'api_token': current_user.api_token,
         'folders': [],
         'files': [],
     })
@@ -144,19 +149,21 @@ async def create_bucket(provider: str, name: str):
 
 
 @storage_router.get('/bucket', response_description='Get bucket')
-async def get_bucket(bucket_id: str):
+async def get_bucket(bucket_id: str, current_user: User = Depends(get_current_active_user)):
     """
     list of buckets
     """
-    bucket = await db.buckets.find_one({'_id': ObjectId(bucket_id)}, {'_id': 0})
+    bucket = await db.buckets.find_one({'_id': ObjectId(bucket_id),
+                                        'api_token': current_user.api_token}, {'_id': 0})
     return responses.JSONResponse(status_code=status.HTTP_200_OK, content=bucket)
 
 
 @storage_router.get('/buckets', response_description='Get buckets')
-async def get_buckets():
+async def get_buckets(current_user: User = Depends(get_current_active_user)):
     """
     get one bucket info
     """
     bucket_ids = [{'id': str(bucket['_id']), 'name': bucket['name']}
-                  async for bucket in db.buckets.find({}, {'_id': 1, 'name': 1})]
+                  async for bucket in db.buckets.find({'api_token': current_user.api_token},
+                                                      {'_id': 1, 'name': 1})]
     return responses.JSONResponse(status_code=status.HTTP_200_OK, content=bucket_ids)

@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends
 from app.core.auth import get_current_active_user
 
 tasks_router = APIRouter(
-    prefix="/tasks",
+    prefix="/api/tasks",
     tags=["tasks"],
     dependencies=[Depends(get_current_active_user)],
 )
