@@ -22,7 +22,7 @@ async def register(register_data: RegisterUserInput):
     email = register_data.email
     pwd = register_data.password2
     api_token = str(uuid4())
-    # hash pwd
+
     await create_user_in_mongo(user, email, pwd, api_token)
 
     return RegisterOutput(username=user, api_token=api_token)
