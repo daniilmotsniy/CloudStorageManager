@@ -6,7 +6,7 @@ from celery.result import AsyncResult
 from starlette.responses import JSONResponse
 from fastapi import APIRouter, Depends
 
-from app.core.auth import get_current_active_user
+from cloud_storage_service.app.core.auth import get_current_active_user
 
 tasks_router = APIRouter(
     prefix="/api/tasks",

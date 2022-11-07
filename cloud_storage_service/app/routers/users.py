@@ -4,10 +4,10 @@ from uuid import uuid4
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import Depends, HTTPException, status, APIRouter
 
-from app.models.token import Token
-from app.core.config import ACCESS_TOKEN_EXPIRE_MINUTES
-from app.core.auth import User, get_current_active_user, create_access_token, authenticate_user, create_user_in_mongo
-from app.models.user import RegisterUserInput, RegisterOutput
+from cloud_storage_service.app.models.token import Token
+from cloud_storage_service.app.core.config import ACCESS_TOKEN_EXPIRE_MINUTES
+from cloud_storage_service.app.core.auth import User, get_current_active_user, create_access_token, authenticate_user, create_user_in_mongo
+from cloud_storage_service.app.models.user import RegisterUserInput, RegisterOutput
 
 users_router = APIRouter(
     prefix="/api/users",

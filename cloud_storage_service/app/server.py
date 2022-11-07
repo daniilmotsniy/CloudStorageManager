@@ -4,9 +4,9 @@ core FastAPI app
 
 from fastapi import FastAPI
 
-from app.routers.storage import storage_router
-from app.routers.tasks import tasks_router
-from app.routers.users import users_router
+from cloud_storage_service.app.routers.storage import storage_router
+from cloud_storage_service.app.routers.tasks import tasks_router
+from cloud_storage_service.app.routers.users import users_router
 
 app = FastAPI()
 

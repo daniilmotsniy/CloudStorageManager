@@ -7,9 +7,9 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-from app.core.config import SECRET_KEY, ALGORITHM
-from app.models.token import TokenData
-from app.models.user import UserInDB, User
+from cloud_storage_service.app.core.config import SECRET_KEY, ALGORITHM
+from cloud_storage_service.app.models.token import TokenData
+from cloud_storage_service.app.models.user import UserInDB, User
 
 
 mongo_client = motor.motor_asyncio.AsyncIOMotorClient(environ['MONGODB_URL'])

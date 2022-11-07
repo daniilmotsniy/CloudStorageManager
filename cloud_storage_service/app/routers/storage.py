@@ -16,9 +16,9 @@ from starlette import status, responses
 from google.cloud import storage
 from fastapi import UploadFile, APIRouter, Depends
 
-from app.core.auth import get_current_active_user
-from app.models.user import User
-from app.worker import upload_to_s3, upload_to_cloud_storage, remove_tmp_file
+from cloud_storage_service.app.core.auth import get_current_active_user
+from cloud_storage_service.app.models.user import User
+from cloud_storage_service.app.worker import upload_to_s3, upload_to_cloud_storage, remove_tmp_file
 
 storage_router = APIRouter(
     prefix="/api/storage",
