@@ -1,15 +1,11 @@
-import {api} from "../../api";
+import {api} from "../../api"
 
-import {useEffect, useState} from "react";
-
+import {useEffect, useState} from "react"
 
 function AccountPage() {
-    // api.login('dan', 'test')
-
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const [userdata, setUserdata] = useState({})
-
 
     useEffect(() => {
         userDetails()
@@ -19,16 +15,15 @@ function AccountPage() {
         setLoading(true);
         setError(null);
         api.getUser()
-            .then(({data}) => {
-                setLoading(false);
-                setError(false);
-                setUserdata(data);
-            })
-            .catch(err => {
-                setError(`Unknown error occured ` + err);
-            })
+        .then(({data}) => {
+            setLoading(false);
+            setError(false);
+            setUserdata(data);
+        })
+        .catch(err => {
+            setError(`Unknown error occured ` + err);
+        })
     }
-
 
     return (
         error ? <div>{error}</div> :
@@ -43,12 +38,11 @@ function AccountPage() {
                                 Email: {userdata.email}
                             </p>
                             <p>
-                                Token: {userdata.api_token}
+                                API Token: {userdata.api_token}
                             </p>
                         </>
                 }
             </div>
-
     )
 }
 

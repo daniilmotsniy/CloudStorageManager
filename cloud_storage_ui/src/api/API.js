@@ -2,19 +2,26 @@
  * API - the class to work with API methods
  */
 
-import axios from 'axios';
-import { Service } from 'axios-middleware';
-
-
+import axios from 'axios'
+import { Service } from 'axios-middleware'
 
 class API {
     constructor(baseUrl) {
-        this.baseUrl = baseUrl;
-        this.service = new Service(axios);
+        this.baseUrl = baseUrl
+        this.service = new Service(axios)
         this.axiosInstance = axios.create({
             baseURL: baseUrl,
             headers: {"Content-Type": "application/json"}
         })
+    }
+
+    jsHeaders() {
+        return {
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            }
+        }
     }
 
     login(username, password) {
@@ -29,33 +36,54 @@ class API {
         })
         .then(response => {
             if (response.ok) {
-                return response.json();
+                return response.json()
             }
-            throw new Error("Invalid credentials");
+            throw new Error("Invalid credentials")
         })
         .then(data => {API.setToken(data)})
     }
 
+    register(username, email, password1, password2){
+        const body = {
+            username: username,
+            email: email,
+            password1: password1,
+            password2: password2
+        };
+        return fetch( this.baseUrl + `/api/users/register`, {
+            method: "POST",
+            ...this.jsHeaders(),
+            body: JSON.stringify(body)
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json()
+            }
+            throw new Error("Invalid credentials")
+        })
+        .then(() => {window.location.replace("/")})
+    }
+
     static get authHeaders() {
-        const token = window.localStorage.getItem("token");
-        const tokenExpiration = window.localStorage.getItem("tokenExp");
-        const tokenExpirationDate = new Date(parseInt(tokenExpiration)  * 1000);
+        const token = window.localStorage.getItem("token")
+        const tokenExpiration = window.localStorage.getItem("tokenExp")
+        const tokenExpirationDate = new Date(parseInt(tokenExpiration)  * 1000)
         if (token && tokenExpiration && tokenExpirationDate > new Date()) {
-            return {"token": `${token}`};
+            return {"token": `${token}`}
         }
-        return {};
+        return {}
     };
 
     static setToken(data) {
         if (!data){
-            window.localStorage.removeItem("token");
-            window.localStorage.removeItem("tokenExp");
-            return;
+            window.localStorage.removeItem("token")
+            window.localStorage.removeItem("tokenExp")
+            return
         }
-        const {token, tokenExp} = data;
+        const {token, tokenExp} = data
 
-        window.localStorage.setItem("token", token);
-        window.localStorage.setItem("tokenExp", tokenExp);
+        window.localStorage.setItem("token", token)
+        window.localStorage.setItem("tokenExp", tokenExp)
     };
 
     setUp() {
@@ -76,35 +104,26 @@ class API {
                 return response;
             }
         };
-        this.service.register(serviceConfig);
-    }
-
-    jsHeaders() {
-        return {
-            headers: {
-                'Content-Type': 'application/json',
-                'accept': 'application/json'
-            }
-        }
+        this.service.register(serviceConfig)
     }
 
     static get isAuthenticated() {
-        const token = window.localStorage.getItem("token");
-        const tokenExpiration = window.localStorage.getItem("tokenExp");
-        const tokenExpirateionDate = new Date(parseInt(tokenExpiration) * 1000);
-        if (!(token && tokenExpiration && tokenExpirateionDate > new Date())){
-            API.setToken(null);
-            return false;
+        const token = window.localStorage.getItem("token")
+        const tokenExpiration = window.localStorage.getItem("tokenExp")
+        const tokenExpirationDate = new Date(parseInt(tokenExpiration) * 1000)
+        if (!(token && tokenExpiration && tokenExpirationDate > new Date())){
+            API.setToken(null)
+            return false
         }
-        return true;
-    };
+        return true
+    }
 
     logout() {
         ["token","tokenExp"].forEach(el => {
-            window.localStorage.removeItem(el);
-        });
-        window.location.replace("/");
-    };
+            window.localStorage.removeItem(el)
+        })
+        window.location.replace("/")
+    }
 
     getBucketsList() {
         return this.axiosInstance.get('/api/storage/buckets')
@@ -112,7 +131,7 @@ class API {
 
     getUser() {
         return this.axiosInstance.get(`/api/users/me`)
-    };
+    }
 }
 
-export default API;
+export default API

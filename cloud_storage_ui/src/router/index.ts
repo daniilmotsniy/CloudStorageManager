@@ -1,7 +1,7 @@
-// import AnonymousRouter from "./AnonymousRotuer";
+import AnonymousRouter from "./AnonymousRotuer"
 import AuthenticatedRouter from "./AuthenticatedRouter"
 
 export {
-    // AnonymousRouter,
+    AnonymousRouter,
     AuthenticatedRouter
-};
+}

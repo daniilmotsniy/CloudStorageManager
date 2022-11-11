@@ -4,7 +4,7 @@ import {api} from "../../api";
 function Header() {
     const handleLogOut = () => {
         api.logout();
-    };
+    }
     return (
         <div className="Header" >
             <NavLink to="/buckets">Buckets</NavLink>

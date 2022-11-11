@@ -9,4 +9,5 @@ const api = new API(API_URL);
 api.setUp();
 export {
     api,
+    API
 };

@@ -3,14 +3,10 @@ import {api} from "../../api";
 
 import {useEffect, useState} from "react";
 
-
 function BucketsPage() {
-    // api.login('dan', 'test')
-
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const [buckets, setBuckets] = useState([])
-
 
     useEffect(() => {
         loadBuckets()
@@ -30,20 +26,17 @@ function BucketsPage() {
         })
     }
 
-
     return (
         error ? <div>{error}</div> :
         <div>
             {
                 loading ? <div>Loading ...</div> :
-
                     <>
                         {
                             buckets.map(el => (
                                 <BucketInfo bucketName={el.name} bucketDesc={el.provider}/>
                             ))
                         }
-
                     </>
             }
         </div>
