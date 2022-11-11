@@ -111,7 +111,7 @@ class API {
     }
 
     getUser() {
-        return this.axiosInstance.get(`/api/user/me`)
+        return this.axiosInstance.get(`/api/users/me`)
     };
 }
 

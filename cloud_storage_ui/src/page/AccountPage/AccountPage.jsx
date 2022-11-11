@@ -1,9 +1,55 @@
+import {api} from "../../api";
+
+import {useEffect, useState} from "react";
+
+
 function AccountPage() {
+    // api.login('dan', 'test')
+
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
+    const [userdata, setUserdata] = useState({})
+
+
+    useEffect(() => {
+        userDetails()
+    }, []);
+
+    function userDetails() {
+        setLoading(true);
+        setError(null);
+        api.getUser()
+            .then(({data}) => {
+                setLoading(false);
+                setError(false);
+                setUserdata(data);
+            })
+            .catch(err => {
+                setError(`Unknown error occured ` + err);
+            })
+    }
+
+
     return (
-        <div>
-            Hello, user! You can change your pass and API key here.
-        </div>
+        error ? <div>{error}</div> :
+            <div>
+                {
+                    loading ? <div>Loading ...</div> :
+                        <>
+                            <p>
+                                Username: {userdata.username}
+                            </p>
+                            <p>
+                                Email: {userdata.email}
+                            </p>
+                            <p>
+                                Token: {userdata.api_token}
+                            </p>
+                        </>
+                }
+            </div>
+
     )
 }
 
-export default AccountPage;
+export default AccountPage
