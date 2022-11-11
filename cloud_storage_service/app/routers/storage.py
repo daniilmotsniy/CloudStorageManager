@@ -163,7 +163,7 @@ async def get_buckets(current_user: User = Depends(get_current_active_user)):
     """
     get one bucket info
     """
-    bucket_ids = [{'id': str(bucket['_id']), 'name': bucket['name']}
+    bucket_ids = [{'id': str(bucket['_id']), 'name': bucket['name'], 'provider': bucket['provider']}
                   async for bucket in db.buckets.find({'api_token': current_user.api_token},
-                                                      {'_id': 1, 'name': 1})]
+                                                      {'_id': 1, 'name': 1, 'provider': 1})]
     return responses.JSONResponse(status_code=status.HTTP_200_OK, content=bucket_ids)

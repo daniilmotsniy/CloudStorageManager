@@ -3,8 +3,10 @@ function BucketInfo(props) {
         <div>
             <h3>{props.bucketName}</h3>
             <p>
-                {props.bucketDesc}
+                Provider: {props.bucketDesc}
             </p>
+            <button> Read </button>
+            <button> Delete </button>
         </div>
     )
 }
