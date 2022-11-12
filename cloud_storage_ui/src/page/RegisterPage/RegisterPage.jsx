@@ -1,4 +1,5 @@
 import {api} from "../../api";
+import "../../router/anonymous.css"
 
 function RegisterPage() {
     const handleSubmit = (event) => {

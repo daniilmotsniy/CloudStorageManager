@@ -1,5 +1,5 @@
 import {api} from "../../api"
-import "./styles.css"
+import "../../router/anonymous.css"
 
 function LoginPage() {
     const handleSubmit = (event) => {
@@ -16,7 +16,6 @@ function LoginPage() {
     return (
         <div className="Anonymous">
             <h3>Log In</h3>
-
             <form onSubmit={handleSubmit}>
                 <input id="username" name="username" required type="text" placeholder="Username"/>
                 <input id="password" name="password" required type="password" placeholder="Password"/>
