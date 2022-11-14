@@ -4,7 +4,7 @@ import AnonymousTemplate from "../components/AnonymousTemplate"
 import LoginPage from "../page/LoginPage"
 import RegisterPage from "../page/RegisterPage"
 
-import "./anonymous.css"
+import "./styles.css"
 
 function AuthenticatedRouter() {
     return (

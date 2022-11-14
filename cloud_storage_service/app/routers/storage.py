@@ -17,6 +17,7 @@ from google.cloud import storage
 from fastapi import UploadFile, APIRouter, Depends
 
 from cloud_storage_service.app.core.auth import get_current_active_user
+from cloud_storage_service.app.models.storage import CreateBucketInput
 from cloud_storage_service.app.models.user import User
 from cloud_storage_service.app.worker import upload_to_s3, upload_to_cloud_storage, remove_tmp_file
 
@@ -118,28 +119,24 @@ async def create_folder(name: str, bucket: str, parent: str = None):
 
 
 @storage_router.post('/buckets', response_description='Add new bucket')
-async def create_bucket(provider: str, name: str, current_user: User = Depends(get_current_active_user)):
+async def create_bucket(data: CreateBucketInput, current_user: User = Depends(get_current_active_user)):
     """
     bucket creation for selected provider
     """
-    provider_db = await db['providers'].find_one({'name': provider})
-    if not provider_db:
-        return responses.JSONResponse(status_code=status.HTTP_400_BAD_REQUEST,
-                                      content={'error': 'There is no such provider'})
     try:
-        if provider_db['name'].lower() == 'aws':
-            s3.create_bucket(Bucket=name)
-        elif provider_db['name'].lower() == 'gcp':
-            gcp_storage_client.create_bucket(name)
+        if data.provider.lower() == 'aws':
+            s3.create_bucket(Bucket=data.name)
+        elif data.provider.lower() == 'gcp':
+            gcp_storage_client.create_bucket(data.name)
         else:
-            return responses.JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                                          content={'error': 'There is wrong provider in database'})
+            return responses.JSONResponse(status_code=status.HTTP_400_BAD_REQUEST,
+                                          content={'error': 'There is wrong provider'})
     except ValueError as error:
         return responses.JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                                       content={'error': str(error)})
     new_bucket = await db.buckets.insert_one({
-        'provider': provider,
-        'name': name,
+        'provider': data.provider,
+        'name': data.name,
         'api_token': current_user.api_token,
         'folders': [],
         'files': [],

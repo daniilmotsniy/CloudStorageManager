@@ -55,7 +55,12 @@
 }
 
 .ParentAnonymous div {
-    height: 400px;
+    display: inline-block;
+    align-items: center;
+    justify-content: center;
+}
+
+.ParentAuthenticated div {
     display: inline-block;
     align-items: center;
     justify-content: center;

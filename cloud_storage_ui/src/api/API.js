@@ -132,6 +132,13 @@ class API {
     getUser() {
         return this.axiosInstance.get(`/api/users/me`)
     }
+
+    addNewBucket(name, provider) {
+        return this.axiosInstance.post('/api/storage/buckets', {
+            name: name,
+            provider: provider
+        })
+    }
 }
 
 export default API
