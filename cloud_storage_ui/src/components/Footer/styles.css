@@ -1,0 +1,12 @@
+/* Style the footer with a background and some padding */
+.Footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background-color: #076b55;
+    color: white;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    text-align: center;
+    font-size: 20px;
+}

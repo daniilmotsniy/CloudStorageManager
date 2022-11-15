@@ -1,5 +1,5 @@
 .Buckets div {
-    display: inline-block;
+    display: block;
 }
 
 
@@ -7,7 +7,7 @@
     width: 100%;
     background-color: #4CAF50;
     color: white;
-    display: block;
+    display: inline-block;
     padding: 14px 20px;
     margin: 15px 0;
     border: none;
