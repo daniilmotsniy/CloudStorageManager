@@ -1,6 +1,8 @@
 import {NavLink} from "react-router-dom";
 import {api} from "../../api";
 
+import "./styles.css"
+
 function Header() {
     const handleLogOut = () => {
         api.logout();
