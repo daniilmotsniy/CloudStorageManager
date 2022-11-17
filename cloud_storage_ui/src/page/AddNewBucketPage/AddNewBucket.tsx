@@ -3,7 +3,7 @@ import {api} from "../../api";
 import "./styles.css"
 
 function AddNewBucketPage() {
-    const handleSubmit = (event) => {
+    const handleSubmit = (event: { preventDefault: () => void; currentTarget: HTMLFormElement | undefined; }) => {
         event.preventDefault()
         const data = new FormData(event.currentTarget)
         const submitData = {
@@ -23,7 +23,7 @@ function AddNewBucketPage() {
                     <h4>Bucket cloud provider</h4>
                     <label className="container">
                         AWS
-                        <input type="radio" checked="checked" name="provider" value="aws"/>
+                        <input type="radio" checked={true} name="provider" value="aws"/>
                         <span className="checkmark"></span>
                     </label>
                     <label className="container">

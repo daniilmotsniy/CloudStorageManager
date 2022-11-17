@@ -139,6 +139,10 @@ class API {
             provider: provider
         })
     }
+
+    getBucketDetails(bucketId) {
+        return this.axiosInstance.get('/api/storage/bucket?bucket_id=' + bucketId)
+    }
 }
 
 export default API

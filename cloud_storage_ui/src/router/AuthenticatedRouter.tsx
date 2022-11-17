@@ -4,6 +4,7 @@ import AuthenticatedTemplate from "../components/AuthenticatedTemplate"
 import BucketsPage from "../page/BucketsPage"
 import AddNewBucketPage from "../page/AddNewBucketPage"
 import AccountPage from "../page/AccountPage"
+import BucketDetailsPage from "../page/BucketDetailsPage"
 
 function AuthenticatedRouter() {
     return (
@@ -15,6 +16,7 @@ function AuthenticatedRouter() {
                         <Route path="/buckets" element={<BucketsPage />} />
                         <Route path="/add_new_bucket" element={<AddNewBucketPage />} />
                         <Route path="/account" element={<AccountPage />} />
+                        <Route path="/bucket/:id" element={<BucketDetailsPage />} />
                     </Routes>
                 </div>
              </AuthenticatedTemplate>

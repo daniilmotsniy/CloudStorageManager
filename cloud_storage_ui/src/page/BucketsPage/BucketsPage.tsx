@@ -8,8 +8,15 @@ import {NavLink} from "react-router-dom";
 
 function BucketsPage() {
     const [loading, setLoading] = useState(true)
-    const [error, setError] = useState(null)
-    const [buckets, setBuckets] = useState([])
+    const [error, setError] = useState('')
+
+    type BucketType = {
+        id: string
+        name: string
+        provider: string
+    }
+
+    const [buckets, setBuckets] = useState(Array<BucketType>)
 
     useEffect(() => {
         loadBuckets()
@@ -17,15 +24,15 @@ function BucketsPage() {
 
     function loadBuckets() {
         setLoading(true);
-        setError(null);
+        setError('');
         api.getBucketsList()
         .then(({data}) => {
             setLoading(false);
-            setError(false);
+            setError('');
             setBuckets(data);
         })
         .catch(err => {
-            setError(`Unknown error occured ` + err);
+            return setError("Unknown error occurred " + err);
         })
     }
 
@@ -43,14 +50,13 @@ function BucketsPage() {
                             </div>
                             {
                                 buckets.map(el => (
-                                    <BucketInfo bucketName={el.name} bucketDesc={el.provider}/>
+                                    <BucketInfo id={el.id} bucketName={el.name} bucketDesc={el.provider}/>
                                 ))
                             }
                         </div>
                     </>
             }
         </div>
-
     )
 }
 

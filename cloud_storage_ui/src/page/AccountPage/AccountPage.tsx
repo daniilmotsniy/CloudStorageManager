@@ -4,8 +4,15 @@ import {useEffect, useState} from "react"
 
 function AccountPage() {
     const [loading, setLoading] = useState(true)
-    const [error, setError] = useState(null)
-    const [userdata, setUserdata] = useState({})
+    const [error, setError] = useState("")
+
+    type UserData = {
+        username: string
+        email: string
+        api_token: string
+    }
+
+    const [userdata, setUserdata] = useState<UserData | undefined>(undefined)
 
     useEffect(() => {
         userDetails()
@@ -13,20 +20,20 @@ function AccountPage() {
 
     function userDetails() {
         setLoading(true);
-        setError(null);
+        setError("");
         api.getUser()
         .then(({data}) => {
             setLoading(false);
-            setError(false);
+            setError("");
             setUserdata(data);
         })
         .catch(err => {
-            setError(`Unknown error occured ` + err);
+            setError("Unknown error occured " + err);
         })
     }
 
     return (
-        error ? <div>{error}</div> :
+        error || !userdata ? <div>{error}</div> :
             <div>
                 {
                     loading ? <div>Loading ...</div> :

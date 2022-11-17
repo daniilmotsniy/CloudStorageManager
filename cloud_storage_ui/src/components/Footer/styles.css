@@ -1,6 +1,6 @@
 /* Style the footer with a background and some padding */
 .Footer {
-    /*position: fixed;*/
+    position: fixed;
     bottom: 0;
     overflow: hidden;
     width: 100%;

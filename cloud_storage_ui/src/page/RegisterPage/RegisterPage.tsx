@@ -2,7 +2,7 @@ import {api} from "../../api";
 import "../../router/styles.css"
 
 function RegisterPage() {
-    const handleSubmit = (event) => {
+    const handleSubmit = (event: { preventDefault: () => void; currentTarget: HTMLFormElement | undefined; }) => {
         event.preventDefault()
         const data = new FormData(event.currentTarget)
         const submitData = {
